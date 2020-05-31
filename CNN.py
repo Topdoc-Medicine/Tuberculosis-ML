@@ -459,3 +459,82 @@ val_batch_size = 10
 
 train_steps = np.ceil(num_train_samples / train_batch_size)
 val_steps = np.ceil(num_val_samples / val_batch_size)
+
+datagen = ImageDataGenerator(rescale=1.0/255)
+
+train_gen = datagen.flow_from_directory(train_path,
+                                        target_size=(IMAGE_HEIGHT,IMAGE_WIDTH),
+                                        batch_size=train_batch_size,
+                                        class_mode='categorical')
+
+val_gen = datagen.flow_from_directory(valid_path,
+                                        target_size=(IMAGE_HEIGHT,IMAGE_WIDTH),
+                                        batch_size=val_batch_size,
+                                        class_mode='categorical')
+
+# Note: shuffle=False causes the test dataset to not be shuffled
+test_gen = datagen.flow_from_directory(valid_path,
+                                        target_size=(IMAGE_HEIGHT,IMAGE_WIDTH),
+                                        batch_size=val_batch_size,
+                                        class_mode='categorical',
+                                        shuffle=False)
+
+#Create Model Architecture
+
+# Source: https://www.kaggle.com/fmarazzi/baseline-keras-cnn-roc-fast-5min-0-8253-lb
+
+kernel_size = (3,3)
+pool_size= (2,2)
+first_filters = 32
+second_filters = 64
+third_filters = 128
+
+dropout_conv = 0.3
+dropout_dense = 0.3
+
+
+model = Sequential()
+model.add(Conv2D(first_filters, kernel_size, activation = 'relu',
+                 input_shape = (IMAGE_HEIGHT, IMAGE_WIDTH, 3)))
+model.add(Conv2D(first_filters, kernel_size, activation = 'relu'))
+model.add(Conv2D(first_filters, kernel_size, activation = 'relu'))
+model.add(MaxPooling2D(pool_size = pool_size))
+model.add(Dropout(dropout_conv))
+
+model.add(Conv2D(second_filters, kernel_size, activation ='relu'))
+model.add(Conv2D(second_filters, kernel_size, activation ='relu'))
+model.add(Conv2D(second_filters, kernel_size, activation ='relu'))
+model.add(MaxPooling2D(pool_size = pool_size))
+model.add(Dropout(dropout_conv))
+
+model.add(Conv2D(third_filters, kernel_size, activation ='relu'))
+model.add(Conv2D(third_filters, kernel_size, activation ='relu'))
+model.add(Conv2D(third_filters, kernel_size, activation ='relu'))
+model.add(MaxPooling2D(pool_size = pool_size))
+model.add(Dropout(dropout_conv))
+
+model.add(Flatten())
+model.add(Dense(256, activation = "relu"))
+model.add(Dropout(dropout_dense))
+model.add(Dense(2, activation = "softmax"))
+
+model.summary()
+
+model.compile(Adam(lr=0.0001), loss='binary_crossentropy',
+              metrics=['accuracy'])
+
+filepath = "model.h5"
+checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1,
+                             save_best_only=True, mode='max')
+
+reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.5, patience=2,
+                                   verbose=1, mode='max', min_lr=0.00001)
+
+
+callbacks_list = [checkpoint, reduce_lr]
+
+history = model.fit_generator(train_gen, steps_per_epoch=train_steps,
+                            validation_data=val_gen,
+                            validation_steps=val_steps,
+                            epochs=100, verbose=1,
+                           callbacks=callbacks_list)
