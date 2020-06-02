@@ -524,3 +524,28 @@ history = model.fit_generator(train_gen, steps_per_epoch=train_steps,
                             validation_steps=val_steps,
                             epochs=100, verbose=1,
                            callbacks=callbacks_list)
+
+model.metrics_names
+
+models.load_weights('model.h5')
+val_loss, val_acc = \
+model.evaluate_generator(test_gen,
+                        steps=val_steps)
+
+print('val_loss:', val_loss)
+print('val_acc:', val_acc)
+
+# Get the labels of the test images.
+
+test_labels = test_gen.classes
+
+# We need these to plot the confusion matrix.
+test_labels
+
+# Print the label associated with each class
+test_gen.class_indices
+
+# make a prediction
+predictions = model.predict_generator(test_gen, steps=val_steps, verbose=1)
+
+predictions.shape
