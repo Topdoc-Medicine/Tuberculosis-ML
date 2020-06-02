@@ -1,10 +1,7 @@
-from numpy.random import seed
-seed(101)
-from tensorflow import set_random_seed
-set_random_seed(101)
-
 import pandas as pd
 import numpy as np
+
+import errno
 
 import tensorflow
 
@@ -20,18 +17,12 @@ from tensorflow.keras.metrics import binary_accuracy
 import os
 import cv2
 
-import imageio
-import skimage
-import skimage.io
-import skimage.transform
-
 from sklearn.utils import shuffle
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 import itertools
 import shutil
-import matplotlib.pyplot as plt
-%matplotlib inline
+
 
 # Total number of images we want to have in each class
 NUM_AUG_IMAGES_WANTED = 1000
@@ -40,16 +31,13 @@ NUM_AUG_IMAGES_WANTED = 1000
 IMAGE_HEIGHT = 96
 IMAGE_WIDTH = 96
 
-# Dataset contains images from Montgomery and China
-os.listdir('../input')
-
 #Prints number of images in each folder approx. 800 total
-print(len(os.listdir('../input/ChinaSet_AllFiles/ChinaSet_AllFiles/CXR_png')))
-print(len(os.listdir('../input/Montgomery/MontgomerySet/CXR_png')))
+print(len(os.listdir('./ChinaSet_AllFiles/CXR_png')))
+print(len(os.listdir('./MontgomerySet/CXR_png')))
 
 #Create Dataframe table
-shen_image_list = os.listdir('../input/ChinaSet_AllFiles/ChinaSet_AllFiles/CXR_png')
-mont_image_list = os.listdir('../input/Montgomery/MontgomerySet/CXR_png')
+shen_image_list = os.listdir('./ChinaSet_AllFiles/CXR_png')
+mont_image_list = os.listdir('./MontgomerySet/CXR_png')
 
 # put the images into dataframes
 df_shen = pd.DataFrame(shen_image_list, columns=['image_id'])
@@ -107,29 +95,14 @@ def draw_category_images(col_name,figure_cols, df, IMAGE_PATH):
     displays different images.
     """
 
-
-    categories = (df.groupby([col_name])[col_name].nunique()).index
-    f, ax = plt.subplots(nrows=len(categories),ncols=figure_cols,
-                         figsize=(4*figure_cols,4*len(categories))) # adjust size here
-    # draw a number of images for each location
-    for i, cat in enumerate(categories):
-        sample = df[df[col_name]==cat].sample(figure_cols) # figure_cols is also the sample size
-        for j in range(0,figure_cols):
-            file=IMAGE_PATH + sample.iloc[j]['image_id']
-            im=imageio.imread(file)
-            ax[i, j].imshow(im, resample=True, cmap='gray')
-            ax[i, j].set_title(cat, fontsize=14)
-    plt.tight_layout()
-    plt.show()
-
 # Shenzen Dataset
 
-IMAGE_PATH = '../input/ChinaSet_AllFiles/ChinaSet_AllFiles/CXR_png/'
+IMAGE_PATH = './ChinaSet_AllFiles/CXR_png/'
 draw_category_images('target',4, df_shen, IMAGE_PATH)
 
 # Montgomery Dataset
 
-IMAGE_PATH = '../input/Montgomery/MontgomerySet/CXR_png/'
+IMAGE_PATH = './MontgomerySet/CXR_png/'
 draw_category_images('target',4, df_mont, IMAGE_PATH)
 
 #Label Images with shape and pixel number
@@ -155,7 +128,7 @@ def read_image_sizes(file_name):
     return output
 
 #Shenzen
-IMAGE_PATH = '../input/ChinaSet_AllFiles/ChinaSet_AllFiles/CXR_png/'
+IMAGE_PATH = './ChinaSet_AllFiles/CXR_png/'
 
 m = np.stack(df_shen['image_id'].apply(read_image_sizes))
 df = pd.DataFrame(m,columns=['w','h','c','max_pixel_val','min_pixel_val'])
@@ -164,7 +137,7 @@ df_shen = pd.concat([df_shen,df],axis=1, sort=False)
 df_shen.head()
 
 #Montgomery
-IMAGE_PATH = '../input/Montgomery/MontgomerySet/CXR_png/'
+IMAGE_PATH = './MontgomerySet/CXR_png/'
 
 m = np.stack(df_mont['image_id'].apply(read_image_sizes))
 df = pd.DataFrame(m,columns=['w','h','c','max_pixel_val','min_pixel_val'])
@@ -206,8 +179,11 @@ df_val['target'].value_counts()
 
 # Create a new directory
 base_dir = 'base_dir'
-os.mkdir(base_dir)
-
+try:
+    os.makedirs(base_dir)
+except OSError as e:
+    if e.errno != errno.EEXIST:
+        raise
 
 #[CREATE FOLDERS INSIDE THE BASE DIRECTORY]
 
@@ -225,28 +201,54 @@ os.mkdir(base_dir)
 # create a path to 'base_dir' to which we will join the names of the new folders
 # train_dir
 train_dir = os.path.join(base_dir, 'train_dir')
-os.mkdir(train_dir)
+
+try:
+    os.makedirs(train_dir)
+except OSError as e:
+    if e.errno != errno.EEXIST:
+        raise
 
 # val_dir
 val_dir = os.path.join(base_dir, 'val_dir')
-os.mkdir(val_dir)
 
+try:
+    os.makedirs(val_dir)
+except OSError as e:
+    if e.errno != errno.EEXIST:
+        raise
 
 # [CREATE FOLDERS INSIDE THE TRAIN AND VALIDATION FOLDERS]
 # Inside each folder we create seperate folders for each class
 
 # create new folders inside train_dir
 Normal = os.path.join(train_dir, 'Normal')
-os.mkdir(Normal)
-Tuberculosis = os.path.join(train_dir, 'Tuberculosis')
-os.mkdir(Tuberculosis)
 
+try:
+    os.makedirs(Normal)
+except OSError as e:
+    if e.errno != errno.EEXIST:
+        raise
+
+Tuberculosis = os.path.join(train_dir, 'Tuberculosis')
+try:
+    os.makedirs(Tuberculosis)
+except OSError as e:
+    if e.errno != errno.EEXIST:
+        raise
 
 # create new folders inside val_dir
 Normal = os.path.join(val_dir, 'Normal')
-os.mkdir(Normal)
+try:
+    os.makedirs(Normal)
+except OSError as e:
+    if e.errno != errno.EEXIST:
+        raise
 Tuberculosis = os.path.join(val_dir, 'Tuberculosis')
-os.mkdir(Tuberculosis)
+try:
+    os.makedirs(Tuberculosis)
+except OSError as e:
+    if e.errno != errno.EEXIST:
+        raise
 
 #Transfer images into folders
 # Set the image_id as the index in df_data
@@ -255,8 +257,8 @@ df_data.set_index('image_id', inplace=True)
 
 
 # Get a list of images in each of the two folders
-folder_1 = os.listdir('../input/ChinaSet_AllFiles/ChinaSet_AllFiles/CXR_png')
-folder_2 = os.listdir('../input/Montgomery/MontgomerySet/CXR_png')
+folder_1 = os.listdir('./ChinaSet_AllFiles/CXR_png')
+folder_2 = os.listdir('./MontgomerySet/CXR_png')
 
 # Get a list of train and val images
 train_list = list(df_train['image_id'])
@@ -273,7 +275,7 @@ for image in train_list:
 
     if fname in folder_1:
         # source path to image
-        src = os.path.join('../input/ChinaSet_AllFiles/ChinaSet_AllFiles/CXR_png', fname)
+        src = os.path.join('./ChinaSet_AllFiles/CXR_png', fname)
         # destination path to image
         dst = os.path.join(train_dir, label, fname)
 
@@ -285,7 +287,7 @@ for image in train_list:
 
     if fname in folder_2:
         # source path to image
-        src = os.path.join('../input/Montgomery/MontgomerySet/CXR_png', fname)
+        src = os.path.join('./MontgomerySet/CXR_png', fname)
         # destination path to image
         dst = os.path.join(train_dir, label, fname)
 
@@ -307,7 +309,7 @@ for image in val_list:
 
     if fname in folder_1:
         # source path to image
-        src = os.path.join('../input/ChinaSet_AllFiles/ChinaSet_AllFiles/CXR_png', fname)
+        src = os.path.join('./ChinaSet_AllFiles/CXR_png', fname)
         # destination path to image
         dst = os.path.join(val_dir, label, fname)
 
@@ -321,7 +323,7 @@ for image in val_list:
 
     if fname in folder_2:
         # source path to image
-        src = os.path.join('../input/Montgomery/MontgomerySet/CXR_png', fname)
+        src = os.path.join('./MontgomerySet/CXR_png', fname)
         # destination path to image
         dst = os.path.join(val_dir, label, fname)
 
@@ -425,22 +427,6 @@ print(len(os.listdir('base_dir/val_dir/Tuberculosis')))
 
 # plots images with labels within jupyter notebook
 # source: https://github.com/smileservices/keras_utils/blob/master/utils.py
-
-def plots(ims, figsize=(20,10), rows=5, interp=False, titles=None): # 12,6
-    if type(ims[0]) is np.ndarray:
-        ims = np.array(ims).astype(np.uint8)
-        if (ims.shape[-1] != 3):
-            ims = ims.transpose((0,2,3,1))
-    f = plt.figure(figsize=figsize)
-    cols = len(ims)//rows if len(ims) % 2 == 0 else len(ims)//rows + 1
-    for i in range(len(ims)):
-        sp = f.add_subplot(rows, cols, i+1)
-        sp.axis('Off')
-        if titles is not None:
-            sp.set_title(titles[i], fontsize=16)
-        plt.imshow(ims[i], interpolation=None if interp else 'none')
-
-plots(imgs, titles=None) # titles=labels will display the image labels
 
 # End of Data Preparation
 ### ===================================================================================== ###
