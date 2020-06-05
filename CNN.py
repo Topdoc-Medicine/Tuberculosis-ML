@@ -510,6 +510,10 @@ model.compile(Adam(lr=0.0001), loss='binary_crossentropy',
               metrics=['accuracy'])
 
 filepath = "model.h5"
+#Save weights into file
+model.save_weights(filepath)
+print("saved model to project")
+
 checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1,
                              save_best_only=True, mode='max')
 
@@ -527,7 +531,7 @@ history = model.fit_generator(train_gen, steps_per_epoch=train_steps,
 
 model.metrics_names
 
-models.load_weights('model.h5')
+model.load_weights('model.h5')
 val_loss, val_acc = \
 model.evaluate_generator(test_gen,
                         steps=val_steps)
@@ -549,3 +553,23 @@ test_gen.class_indices
 predictions = model.predict_generator(test_gen, steps=val_steps, verbose=1)
 
 predictions.shape
+
+test_labels.shape
+
+cm = confusion_matrix(test_labels, predictions.argmax(axis=1))
+
+test_gen.class_indices
+
+#Create Classification Report -- get filenames, labeles, and predictions
+test_filenames = test_gen.filenames
+
+y_true = test_gen.classes
+
+y_pred = predictions.argmax(axis=1)
+
+from sklearn.metrics import classifcation_report
+
+#Generate Classification Report
+report = classifcation_report(y_true, y_pred, target_names=cm_plot_labels)
+
+print(report)
