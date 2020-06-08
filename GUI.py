@@ -11,10 +11,12 @@ import h5py
 import glob
 from keras.initializers import glorot_uniform
 
-h5file =  "model.h5"
+# h5file =  "model.h5"
+#
+# with h5py.File(h5file,'r') as fid:
+#      model = load_model(fid)
 
-with h5py.File(h5file,'r') as fid:
-     model = load_model(fid)
+model = load_model("model.h5")
 
 def get_filenames():
     global path
