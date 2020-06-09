@@ -11,12 +11,10 @@ import h5py
 import glob
 from keras.initializers import glorot_uniform
 
-# h5file =  "model.h5"
-#
-# with h5py.File(h5file,'r') as fid:
-#      model = load_model(fid)
+h5file =  "model.h5"
 
-model = load_model("model.h5")
+with h5py.File(h5file,'r') as fid:
+     model = load_model(fid)
 
 def get_filenames():
     global path
@@ -42,21 +40,22 @@ def autoroi(img):
 
 
 def prediction():
-    list_of_files = glob.glob('./MontgomerySet/CXR_png/*')
+    list_of_files = glob.glob('./base_dir/val_dir/Normal/*')
     latest_file = max(list_of_files, key=os.path.getctime)
     img = cv2.imread(latest_file)
-    # img = cv2.imread("./MontgomerySet/CXR_png/MCUCXR_0001_0.png")
+    # img = cv2.imread("./base_dir/train_dir/Tuberculosis/_0_8376393.png/")
     img = autoroi(img)
     img = cv2.resize(img, (96, 96))
     img = np.reshape(img, [1, 96, 96, 3])
     img = tf.cast(img, tf.float64)
 
     prediction = model.predict(img)
-    # Class = prob.argmax(axis=1)
     print(prediction)
+    Class = prediction.argmax(axis=1)
+    print(Class)
 
 
-    return(prediction)
+    return(Class)
 
 
 finalPrediction = prediction()
